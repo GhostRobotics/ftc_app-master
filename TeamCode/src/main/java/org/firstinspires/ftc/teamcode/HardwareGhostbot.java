@@ -51,8 +51,8 @@ public class HardwareGhostbot
         hwMap = ahwMap;
 
         // Define and Initialize Motors
-        leftMotor   = hwMap.dcMotor.get("leftMotor");
-        rightMotor  = hwMap.dcMotor.get("rightMotor");
+        leftMotor   = hwMap.dcMotor.get("leftmotor");
+        rightMotor  = hwMap.dcMotor.get("rightmotor");
         launcher    = hwMap.dcMotor.get("launcher");
 
         leftMotor.setDirection(DcMotor.Direction.FORWARD); // Set to REVERSE if using AndyMark motors
