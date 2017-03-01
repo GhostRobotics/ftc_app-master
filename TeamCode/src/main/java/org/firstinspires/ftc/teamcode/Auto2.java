@@ -61,6 +61,7 @@ public class Auto2 extends OpMode{
 
     @Override
     public void stop() {
+        stopDrive();
     }
 
     //helper methods

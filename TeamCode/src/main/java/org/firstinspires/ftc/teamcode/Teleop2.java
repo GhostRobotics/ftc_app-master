@@ -34,6 +34,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.Range;
 
 /**
@@ -54,40 +55,33 @@ import com.qualcomm.robotcore.util.Range;
 
 
 /**This code has been slightly modied by Leo Kiefer on 12/3/16 to better control the 2016-17 ftc robot.
- *
- * Both gamepads now trigger the same actions with the same buttons. The only exception is that
- * the 2 driving motors can only be controlled from gamepad 1 and only gamepad 2 can control the beacon
- * pushers.
- *
- * To reset the claw servo arms to their starting positions, pess the B button on BOTH CONTROLLERS!
- *
- * Button Guide:
- * FUNCTION           BUTTON          CONTROLLERS (1 or 2)
- * =======================================================
- * move left           left
- * wheel back          stick            ONLY #1
- * and forth          (up/down)
- * (same stuff for the right wheel, but with other gamepad1 stick)
- *
- * Increase/Decrease  dpad up/down      Either
- * Driving speed       (hold down)
- *
- * Reset driving
- * speed to its        dpad-right       Either
- *original value
- *
- * Beacon           left/right
- * Pushers             triggers        ONLY #2
- *
- * Extend Claws         Y               Either
- *
- * Lower claws          A               Either
- *
- * Close Claws       right bumper       Either
- *
- * Open Claws        Left Bumper        Either
- *
- * Reset claws          B               BOTH controllers (at the same time)
+ */
+
+/*
+Hi! Its Leo againn editing for the new 16-17 robot on 1/27/17!
+A lot of the old stuff changed, so almost all of he comments below make no sense any more!
+
+Josh edited this code on February 17 to add in the new shooter controls that Will wanted but
+apparently didnt' want to lend the robot to me for. Sorry if I break anything.
+
+(Josh 24 Feb 2017)
+
+The buttons are:
+
+Gamepad 1:
+[Right Stick] Right Drive Motor
+[Left Stick] Left Drive Motor
+[Right Bumper] Gear Go Faster
+[Left Bumper] Gear Go Slower
+[R + L Bumper] Gear Reset
+[Y] Raise Lift
+[A] Lower Lift
+
+Gamepad 2:
+[X] Start/Stop Spinner of Death
+[Y] Reset Shooter
+[A] Lower Shooter into Loading Position
+[B] Fire Shooter
  */
 
 @TeleOp(name="Ghostbot: Teleop 2", group="Ghostbot")
@@ -96,14 +90,13 @@ public class Teleop2 extends OpMode{
     /* Declare OpMode members. */
     HardwareGhostbot robot       = new HardwareGhostbot(); // use the class created to define a Ghostbot's hardware
                                                          // could also use HardwareGhostbotMatrix class.
-    final double CLAW_RESET = -0.5;                     //claw servo reset and starting position
-    double          clawOffset  = CLAW_RESET;           // Servo mid position
-    final double    CLAW_SPEED  = 0.01; // sets rate to move servo
-
     final double START_SPEED = 1.0;                     //Starting Value of the drive speed
-    final double SPEED_INCRIMENT = 0.1;                 //how much the speed changes with the D-Pad
+    final double SPEED_INCREMENT = 0.1;                 //how much the speed changes with the D-Pad
     double driveSpeed = START_SPEED;                    //speed it can drive at
-    int speedvar = 0;
+    boolean speedvar = false;
+    boolean hairOn = false;
+    boolean shooting = false;
+    boolean lowered = false;
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -114,6 +107,8 @@ public class Teleop2 extends OpMode{
          * The init() method of the hardware class does all the work here
          */
         robot.init(hardwareMap);
+        robot.launcher.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.launcher.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Say", "Hello Driver");    //Just displays messages on the phone for debugging purposes
@@ -136,78 +131,97 @@ public class Teleop2 extends OpMode{
     /*
      * Code to run REPEATEDLY after the driver hits PLAY but before they hit STOP
      */
+
+    public void motorTime(DcMotor motor, double power, int ms) {
+        motor.setPower(power);
+        WaitMs(ms);
+        motor.setPower(0);
+    }
+
     @Override
     public void loop() {
         double left;
         double right;
 
         // Run wheels in tank mode (note: The joystick goes negative when pushed forwards, so negate it)
-        left = gamepad1.left_stick_y;   //only the first gamepad can drive
-        right = -gamepad1.right_stick_y;
+        left = -gamepad1.left_stick_y;   //only the first gamepad can drive
+        right = - gamepad1.right_stick_y;
         robot.leftMotor.setPower(left*driveSpeed);
         robot.rightMotor.setPower(right*driveSpeed);
 
-        // Use gamepad left & right Bumpers to open and close the claw
-        if (gamepad1.right_bumper || gamepad2.right_bumper)
-            clawOffset += CLAW_SPEED;
-        else if (gamepad1.left_bumper || gamepad2.left_bumper)
-            clawOffset -= CLAW_SPEED;
-
-        //reset the claw servos if the B button is pressed ON BOTH CONTROLLERS
-        if(gamepad1.b && gamepad2.b)
-            clawOffset = CLAW_RESET;
-
-        // Move both servos to new position.  Assume servos are mirror image of each other.
-        clawOffset = Range.clip(clawOffset, -0.5, 0.5);
-        robot.claw1.setPosition(robot.MID_SERVO + clawOffset);
-        robot.claw2.setPosition(robot.MID_SERVO - clawOffset);
+        //reset the shooter if g2.y is pressed
+        if(gamepad2.b && !shooting){
+            shooting = true;
+            if(lowered)
+                lowered = false;
+            robot.launcher.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            robot.launcher.setTargetPosition(1440);
+            robot.launcher.setPower(0.7);
+            while(robot.launcher.isBusy())
+                telemetry.addData("Launcher Status: ", "Launching!");
+            robot.launcher.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            shooting = false;
+        }
+        if(gamepad2.a && !lowered){
+            lowered = true;
+            robot.launcher.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            robot.launcher.setTargetPosition(240);
+            robot.launcher.setPower(0.7);
+            while(robot.launcher.isBusy())
+                telemetry.addData("Launcher Status: ", "Lowering!");
+        }
+        if(gamepad2.a && lowered){
+            robot.launcher.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            robot.launcher.setTargetPosition(0);
+            robot.launcher.setPower(0.7);
+            while(robot.launcher.isBusy())
+                telemetry.addData("Launcher Status: ", "Raising!");
+            robot.launcher.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            lowered = false;
+        }
 
         //(make sure the driveSpeed stays between 0 and 100)
         //use D-Pad up/down to change the drive speed
-        if (speedvar == 0) {
-            if ((gamepad1.dpad_up || gamepad2.dpad_up) && driveSpeed < 1.0)
-                driveSpeed += SPEED_INCRIMENT;
-            speedvar = 1;
-            if ((gamepad1.dpad_down || gamepad2.dpad_down) && driveSpeed > 0)
-                driveSpeed -= SPEED_INCRIMENT;
-            speedvar = 1;
+        if (!speedvar) {
+            if ((gamepad1.right_bumper) && driveSpeed < 1.3)
+                driveSpeed += SPEED_INCREMENT;
+            speedvar = true;
+            if ((gamepad1.left_bumper) && driveSpeed > 0)
+                driveSpeed -= SPEED_INCREMENT;
+            speedvar = true;
         }
-        if (!gamepad1.dpad_down && !gamepad2.dpad_down && !gamepad1.dpad_up && !gamepad2.dpad_up)
-            speedvar = 0;
+        if (!gamepad1.left_bumper && !gamepad1.right_bumper)
+            speedvar = false;
+
         //resets the drive speed if the right d-pad button is pressed
-        if(gamepad1.dpad_right || gamepad2.dpad_right)
+        if(gamepad1.right_bumper && gamepad1.left_bumper)
             driveSpeed=START_SPEED;
 
-
         // Use gamepad buttons to move the arm up (Y) and down (A)
-        if (gamepad1.y || gamepad2.y) {
-            robot.arm1.setPower(-robot.ARM_UP_POWER);
-            robot.arm2.setPower(-robot.ARM_UP_POWER);
-            robot.arm3.setPower(robot.ARM_UP_POWER);
-            robot.arm4.setPower(robot.ARM_UP_POWER);
+        if (gamepad1.y) {
+            robot.lift.setPower(1);
 
-        }else if (gamepad1.a || gamepad2.a) {
-            robot.arm1.setPower(-robot.ARM_DOWN_POWER);
-            robot.arm2.setPower(-robot.ARM_DOWN_POWER);
-            robot.arm3.setPower(robot.ARM_DOWN_POWER);
-            robot.arm4.setPower(robot.ARM_DOWN_POWER);
+        }else if (gamepad1.a) {
+            robot.lift.setPower(-1);
 
-        }else {
-            robot.arm1.setPower(0.0);
-            robot.arm2.setPower(0.0);
-            robot.arm3.setPower(0.0);
-            robot.arm4.setPower(0.0);
+        }else{
+            robot.lift.setPower(0);
         }
 
-        //use the gamepad2 triggers to control the positions of the beacon pushers
-        robot.bp1.setPosition( robot.MID_SERVO - (gamepad2.right_trigger - 0.5f));
-        robot.bp2.setPosition(robot.MID_SERVO + (gamepad2.left_trigger - 0.5f));
+        //Use gamepad button [X] to activate hand-murderer
+        if (!hairOn && gamepad2.x) {
+            robot.spinner.setPower(1);
+            hairOn = true;
+        }
+        if (hairOn && gamepad2.x)
+            robot.spinner.setPower(0);
+        hairOn = false;
 
         // Send telemetry message to signify robot running;
-        telemetry.addData("claw",  "Offset = %.2f", clawOffset);
         telemetry.addData("left",  "%.2f", left);
         telemetry.addData("right", "%.2f", right);
         telemetry.addData("Drive Speed: ",driveSpeed);
+        telemetry.addData("Stick: ", -gamepad2.right_stick_x);
     }
 
     /*
@@ -215,6 +229,13 @@ public class Teleop2 extends OpMode{
      */
     @Override
     public void stop() {
+    }
+
+    public void WaitMs(int milliseconds){
+        try {
+            Thread.sleep(milliseconds);
+        } catch (Exception e) {
+        }
     }
 
 }

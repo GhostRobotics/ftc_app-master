@@ -61,7 +61,7 @@ import org.firstinspires.ftc.teamcode.HardwareGhostbot;
  */
 
 @Autonomous(name="Ghostbot: Auto Drive By Time", group="Ghostbot")
-
+@Disabled
 public class Auto1 extends LinearOpMode {
 
     /* Declare OpMode members. */
@@ -69,9 +69,10 @@ public class Auto1 extends LinearOpMode {
     private ElapsedTime     runtime = new ElapsedTime();
 
 
-    static final double     FORWARD_SPEED = 1.0;
+    double     FORWARD_SPEED = 0.5;
     //static final double     TURN_SPEED    = 0.5;
-
+    double rightPoints = 0;
+    double leftPoints = 0;
     @Override
     public void runOpMode() {
 
@@ -84,30 +85,70 @@ public class Auto1 extends LinearOpMode {
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Status", "Ready to run");    //
         telemetry.update();
+/*
+        boolean pressed = robot.sensor_touch.isPressed();
+        boolean direction = false;
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-
+        telemetry.addData("Status: ", "Running!");
         // Step through each leg of the path, ensuring that the Auto mode has not been stopped along the way
 
-        // Step 1:  Drive forward for 3 seconds
-        robot.leftMotor.setPower(FORWARD_SPEED);
-        robot.rightMotor.setPower(FORWARD_SPEED);
-        runtime.reset();
-        while (opModeIsActive() && (runtime.seconds() < 3.0)) {
-            telemetry.addData("Path", "Leg 1: %2.5f S Elapsed", runtime.seconds());
+        // Step 1:  Drive forward for 10 seconds
+        while (opModeIsActive()) {
+            if (pressed && !robot.sensor_touch.isPressed()) {
+                pressed = false;
+                if (!direction) {
+                    robot.leftMotor.setPower(FORWARD_SPEED);
+                    robot.rightMotor.setPower(-FORWARD_SPEED);
+                    direction = true;
+                    rightPoints++;
+
+                } else if (direction) {
+                    robot.leftMotor.setPower(-FORWARD_SPEED);
+                    robot.rightMotor.setPower(FORWARD_SPEED);
+                    direction = false;
+                } else {
+                    break;
+                }
+
+            } else if (!pressed && robot.sensor_touch.isPressed())
+                pressed = true;
+            if(gamepad1.dpad_up){
+                FORWARD_SPEED += 0.1;
+            }else if (gamepad1.dpad_down) {
+                FORWARD_SPEED -= 0.1;
+            }
+            telemetry.addData("Right Points: ", rightPoints);
+            telemetry.addData("Left Points: ", leftPoints);
+            telemetry.addData("Touch Sensor Pressed: ", pressed);
             telemetry.update();
         }
-
-
-
-        // Step 4:  Stop and close the claw.
-        robot.leftMotor.setPower(0);
-        robot.rightMotor.setPower(0);
-
+        /*
+        robot.leftMotor.setPower(FORWARD_SPEED);
+        robot.rightMotor.setPower(FORWARD_SPEED);
+        direction=false;
+        boolean negative = true;
+        runtime.reset();
+        while (opModeIsActive() && (negative)) {
+            points += 1;
+            telemetry.addData("Left: +1 Point!", "Total Points: %2.5f", points);
+            telemetry.update();
+        }
+        // Step 2:  Drive backwards for 10 seconds
+        robot.leftMotor.setPower(-FORWARD_SPEED);
+        robot.rightMotor.setPower(-FORWARD_SPEED);
+        firection=true;
+        runtime.reset();
+        while (opModeIsActive() && (!negative)) {
+            telemetry.addData("Right: +1 Point!", "Total Points: %2.5f", points);
+            telemetry.update();
+        }
+        */
 
         telemetry.addData("Path", "Complete");
         telemetry.update();
         sleep(1000);
+
     }
 }
