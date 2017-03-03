@@ -32,13 +32,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package org.firstinspires.ftc.teamcode;
 
+import android.media.MediaPlayer;
+
+import com.qualcomm.ftccommon.SoundPlayer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
+import org.firstinspires.ftc.teamcode.Teleop2.*;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 /**
@@ -56,13 +59,14 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
  */
 
 @Autonomous(name="Autonomous: LeftSide 1", group="Iterative Opmode")  // @Autonomous(...) is the other common choice
-public class AutonimousLeftSide1 extends OpMode
+public class AutonomousLeftSide1 extends OpMode
 {
     /* Declare OpMode members. */
     private ElapsedTime runtime = new ElapsedTime();
 
     private final double CIRCUMFERENCE=4.0*Math.PI;
     private final double TURNING_CONSTANT=21.0;
+    MediaPlayer player = MediaPlayer.create(hardwareMap.appContext, R.raw.slider);
 
     // private DcMotor leftMotor = null;
     // private DcMotor rightMotor = null;
@@ -75,7 +79,7 @@ public class AutonimousLeftSide1 extends OpMode
     public void init() {
         robot.init(hardwareMap);
         telemetry.addData("Status", "Initialized");
-
+        player.start();
         /* eg: Initialize the hardware variables. Note that the strings used here as parameters
          * to 'get' must correspond to the names assigned during the robot configuration
          * step (using the FTC Robot Controller app on the phone).
@@ -207,6 +211,11 @@ public class AutonimousLeftSide1 extends OpMode
                 break;
         }
     }
+    public void motorTime(DcMotor motor, double power, int ms) {
+        motor.setPower(power);
+        WaitMs(ms);
+        motor.setPower(0);
+    }
 
     @Override
     public void init_loop() {
@@ -261,23 +270,25 @@ public class AutonimousLeftSide1 extends OpMode
         }
         loops++;
         */
-
-        //Do Shooting Stuff (Compensate later)
         if(loops==1)
-            DriveForwardDistance(.5,38);
+            DriveForwardDistance(.4,4);
         if(loops==2)
-            TurnInPlaceLeft(.7,45);
-        if(loops==3)
-            DriveForwardDistance(.5,10);
+            motorTime(robot.launcher, 1, 600);
         if(loops==4)
-            DriveBackwardDistance(.5,10);
+            DriveForwardDistance(.5,34);
         if(loops==5)
-            TurnInPlaceLeft(.7,90);
+            TurnInPlaceLeft(.7,45);
         if(loops==6)
-            DriveForwardDistance(.5,38);
+            DriveForwardDistance(.5,10);
         if(loops==7)
-            TurnInPlaceRight(.7,45);
+            DriveBackwardDistance(.5,10);
         if(loops==8)
+            TurnInPlaceLeft(.7,90);
+        if(loops==9)
+            DriveForwardDistance(.5,38);
+        if(loops==10)
+            TurnInPlaceRight(.7,45);
+        if(loops==11)
             DriveForwardDistance(.5,15);
 
 
@@ -294,7 +305,7 @@ public class AutonimousLeftSide1 extends OpMode
          */
     @Override
     public void stop() {
-
+        player.stop();
     }
 
     public void WaitMs(int milliseconds){

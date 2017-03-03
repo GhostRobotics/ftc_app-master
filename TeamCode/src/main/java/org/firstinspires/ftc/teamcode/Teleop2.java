@@ -148,7 +148,7 @@ public class Teleop2 extends OpMode{
         robot.rightMotor.setPower(right*driveSpeed);
 
         //reset the shooter if g2.y is pressed
-        if(gamepad2.b && !shooting){
+        if((gamepad2.b || gamepad1.b) && !shooting){
             shooting = true;
             if(lowered)
                 lowered = false;
@@ -173,6 +173,8 @@ public class Teleop2 extends OpMode{
             robot.launcher.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             lowered = false;
         }
+        if(gamepad1.dpad_left||gamepad1.dpad_down||gamepad1.dpad_right||gamepad1.dpad_up)
+            robot.spinner.setPower(-1);
 
         //(make sure the driveSpeed stays between 0 and 100)
         //use D-Pad up/down to change the drive speed
@@ -203,14 +205,14 @@ public class Teleop2 extends OpMode{
         }
 
         //Use gamepad button [X] to activate hand-murderer
-        if (!hairOn && gamepad2.x) {
+        if (gamepad2.x && !hairOn) {
             robot.spinner.setPower(1);
             hairOn = true;
         }
-        if (hairOn && gamepad2.x)
+        if (gamepad2.x && hairOn) {
             robot.spinner.setPower(0);
-        hairOn = false;
-
+            hairOn = false;
+        }
         // Send telemetry message to signify robot running;
         telemetry.addData("left",  "%.2f", left);
         telemetry.addData("right", "%.2f", right);
