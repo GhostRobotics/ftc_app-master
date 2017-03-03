@@ -107,8 +107,6 @@ public class Teleop2 extends OpMode{
          * The init() method of the hardware class does all the work here
          */
         robot.init(hardwareMap);
-        robot.launcher.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        robot.launcher.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Say", "Hello Driver");    //Just displays messages on the phone for debugging purposes
@@ -154,12 +152,8 @@ public class Teleop2 extends OpMode{
             shooting = true;
             if(lowered)
                 lowered = false;
-            robot.launcher.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            robot.launcher.setTargetPosition(1440);
-            robot.launcher.setPower(0.7);
-            while(robot.launcher.isBusy())
-                telemetry.addData("Launcher Status: ", "Launching!");
-            robot.launcher.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            telemetry.addData("Launcher Status: ", "Launching!");
+            motorTime(robot.launcher, 1, 600);
             shooting = false;
         }
         if(gamepad2.a && !lowered){
